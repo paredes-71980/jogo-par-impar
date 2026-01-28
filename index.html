@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Arena Par ou Ímpar - Tokens Virtuais</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-container">
+    <div id="screen-register" class="card active">
+        <h2>Criar Nova Conta</h2>
+        <input type="text" id="reg-name" placeholder="Nome de Utilizador">
+        <input type="password" id="reg-pass" placeholder="Palavra-passe">
+        <input type="password" id="reg-confirm" placeholder="Confirmar Palavra-passe">
+        <label>Data de Nascimento:</label>
+        <input type="date" id="reg-date">
+        <button onclick="handleRegister()">Registar e Receber 1000₮</button>
+        <p onclick="switchScreen('screen-login')">Já tenho conta</p>
+    </div>
+
+    <div id="screen-login" class="card">
+        <h2>Aceder à Carteira</h2>
+        <input type="text" id="login-name" placeholder="Nome de Utilizador">
+        <input type="password" id="login-pass" placeholder="Palavra-passe">
+        <button onclick="handleLogin()">Entrar</button>
+        <p onclick="switchScreen('screen-register')">Criar conta</p>
+    </div>
+
+    <div id="screen-game" class="card">
+        <div class="wallet-bar">
+            <span>👤 <b id="user-display"></b></span>
+            <span>💰 <b id="balance-display">1000</b> ₮</span>
+            <button class="btn-exit" onclick="logout()">Sair</button>
+        </div>
+
+        <div id="bet-area">
+            <h3>Nova Aposta</h3>
+            <input type="number" id="bet-amount" placeholder="Valor da Aposta (X)" min="1">
+            <button onclick="startMatch()">Procurar Oponente</button>
+        </div>
+
+        <div id="match-area" class="hidden">
+            <p id="match-status">Aguardando seleção do Jogador...</p>
+            <div id="player-choice-controls" class="hidden">
+                <button onclick="playMove('par')">Escolher PAR</button>
+                <button onclick="playMove('impar')">Escolher ÍMPAR</button>
+            </div>
+            <div id="result-display" class="result-box hidden">
+                <div id="number-circle">0</div>
+                <p id="final-msg"></p>
+                <button onclick="resetGame()">Nova Rodada</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
