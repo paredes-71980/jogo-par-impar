@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Duelo Par ou Ímpar</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="screen-register" class="auth-card active">
+        <h2>Criar Conta</h2>
+        <input type="text" id="reg-user" placeholder="Nome">
+        <input type="password" id="reg-pass" placeholder="Password">
+        <input type="password" id="reg-conf" placeholder="Confirmar Password">
+        <input type="date" id="reg-date">
+        <button onclick="uiRegister()">Registar (1000₮)</button>
+        <p onclick="showScreen('screen-login')">Já tenho conta? Entrar</p>
+    </div>
+
+    <div id="screen-login" class="auth-card">
+        <h2>Login de Duelo</h2>
+        <div class="login-box">
+            <h4>Jogador 1 (Baixo)</h4>
+            <input type="text" id="login-u1" placeholder="Utilizador 1">
+            <input type="password" id="login-p1" placeholder="Password 1">
+        </div>
+        <hr>
+        <div class="login-box">
+            <h4>Jogador 2 (Cima)</h4>
+            <input type="text" id="login-u2" placeholder="Utilizador 2">
+            <input type="password" id="login-p2" placeholder="Password 2">
+        </div>
+        <button onclick="uiLoginDuel()">Iniciar Duelo</button>
+        <p onclick="showScreen('screen-register')">Criar nova conta</p>
+    </div>
+
+    <div id="screen-game" class="game-container">
+        <div class="player-zone p2-zone">
+            <div class="info">
+                <span id="p2-name">Jogador 2</span>
+                <div class="wallet">💰 <span id="p2-balance">0</span> ₮</div>
+            </div>
+            <div id="p2-controls" class="controls hidden">
+                <button class="btn-play" onclick="makeChoice('par')">PAR</button>
+                <button class="btn-play" onclick="makeChoice('impar')">ÍMPAR</button>
+            </div>
+        </div>
+
+        <div class="center-zone">
+            <div id="setup-area">
+                <input type="number" id="bet-val" placeholder="Aposta">
+                <button onclick="startDuel()">APOSTAR</button>
+            </div>
+            <div id="result-area" class="hidden">
+                <div id="drawn-num">?</div>
+                <button onclick="resetBoard()">Ok</button>
+            </div>
+        </div>
+
+        <div class="player-zone p1-zone">
+            <div id="p1-controls" class="controls hidden">
+                <button class="btn-play" onclick="makeChoice('par')">PAR</button>
+                <button class="btn-play" onclick="makeChoice('impar')">ÍMPAR</button>
+            </div>
+            <div class="info">
+                <div class="wallet">💰 <span id="p1-balance">0</span> ₮</div>
+                <span id="p1-name">Jogador 1</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
