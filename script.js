@@ -1,94 +1,153 @@
-let user1 = null;
-let user2 = null;
-let currentBet = 0;
-let turnOwner = null;
+// CONFIGURAÇÃO DO FIREBASE (SUBSTITUI PELOS TEUS DADOS)
+const firebaseConfig = {
+  apiKey: "COLA_AQUI",
+  authDomain: "COLA_AQUI",
+  databaseURL: "COLA_AQUI",
+  projectId: "COLA_AQUI",
+  storageBucket: "COLA_AQUI",
+  messagingSenderId: "COLA_AQUI",
+  appId: "COLA_AQUI"
+};
 
-const getDB = () => JSON.parse(localStorage.getItem('contas_duelo')) || {};
-const saveDB = (db) => localStorage.setItem('contas_duelo', JSON.stringify(db));
+// Inicializar
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let meuUser = null;
+let minhaSala = null;
+
+// LOGIN E REGISTO
+function loginOuRegistar() {
+    const name = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+    if (!name || !pass) return alert("Preenche os campos!");
+
+    db.ref('usuarios/' + name).once('value', (snap) => {
+        const user = snap.val();
+        if (user) {
+            if (user.pass === pass) entrarLobby(name, user.balance);
+            else alert("Password incorreta!");
+        } else {
+            db.ref('usuarios/' + name).set({ pass: pass, balance: 1000 });
+            entrarLobby(name, 1000);
+        }
+    });
+}
+
+function entrarLobby(name, balance) {
+    meuUser = { name, balance };
+    document.getElementById('user-display').innerText = name;
+    document.getElementById('balance-display').innerText = balance;
+    showScreen('lobby-screen');
+}
+
+// SALA ONLINE
+function entrarNaSala() {
+    const roomId = document.getElementById('room-id').value.trim();
+    if (!roomId) return alert("Digita um ID!");
+    minhaSala = roomId;
+
+    const ref = db.ref('salas/' + roomId);
+    ref.once('value', (snap) => {
+        const sala = snap.val();
+        if (!sala) {
+            ref.set({ p1: meuUser.name, status: "esperando", turno: meuUser.name });
+        } else if (!sala.p2 && sala.p1 !== meuUser.name) {
+            ref.update({ p2: meuUser.name, status: "pronto" });
+        }
+        escutarSala();
+        showScreen('game-screen');
+    });
+}
+
+function escutarSala() {
+    db.ref('salas/' + minhaSala).on('value', (snap) => {
+        const sala = snap.val();
+        if (!sala) return;
+
+        document.getElementById('current-room-display').innerText = minhaSala;
+        document.getElementById('game-balance-display').innerText = meuUser.balance;
+
+        if (sala.p1 && sala.p2) {
+            document.getElementById('waiting-msg').classList.add('hidden');
+            document.getElementById('action-area').classList.remove('hidden');
+            document.getElementById('turn-info').innerText = "Vez de escolher: " + (sala.turno === meuUser.name ? "TU" : sala.turno);
+            
+            if (sala.turno === meuUser.name) document.getElementById('choice-buttons').classList.remove('hidden');
+            else document.getElementById('choice-buttons').classList.add('hidden');
+        }
+
+        if (sala.resultado) mostrarResultado(sala.resultado, sala.p1, sala.p2);
+    });
+
+    // Escutar Chat
+    db.ref('salas/' + minhaSala + '/chat').limitToLast(10).on('value', (snap) => {
+        const chatDiv = document.getElementById('chat-messages');
+        chatDiv.innerHTML = '';
+        snap.forEach(child => {
+            const m = child.val();
+            chatDiv.innerHTML += `<div><b>${m.user}:</b> ${m.texto}</div>`;
+        });
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    });
+}
+
+function fazerJogada(escolha) {
+    const aposta = parseInt(document.getElementById('bet-amount').value);
+    if (!aposta || aposta > meuUser.balance || aposta <= 0) return alert("Aposta inválida!");
+
+    const num = Math.floor(Math.random() * 16) + 1;
+    const tipo = num % 2 === 0 ? 'par' : 'impar';
+    
+    db.ref('salas/' + minhaSala).update({
+        resultado: {
+            quemEscolheu: meuUser.name,
+            escolha: escolha,
+            numero: num,
+            tipo: tipo,
+            valor: aposta
+        }
+    });
+}
+
+function mostrarResultado(res, p1, p2) {
+    document.getElementById('action-area').classList.add('hidden');
+    document.getElementById('result-display').classList.remove('hidden');
+    document.getElementById('drawn-number').innerText = res.numero;
+    
+    const euEscolhi = res.quemEscolheu === meuUser.name;
+    const acertou = res.escolha === res.tipo;
+    const venci = (euEscolhi && acertou) || (!euEscolhi && !acertou);
+
+    document.getElementById('win-lose-msg').innerText = venci ? "GANHASTE " + res.valor + "₮!" : "PERDESTE...";
+    document.getElementById('win-lose-msg').style.color = venci ? "#00b894" : "#ff7675";
+
+    if (!window.lockSaldo) {
+        meuUser.balance += (venci ? res.valor : -res.valor);
+        db.ref('usuarios/' + meuUser.name).update({ balance: meuUser.balance });
+        window.lockSaldo = true;
+    }
+}
+
+function novaRodada() {
+    window.lockSaldo = false;
+    db.ref('salas/' + minhaSala).once('value', (snap) => {
+        const sala = snap.val();
+        const novoTurno = (sala.turno === sala.p1) ? sala.p2 : sala.p1;
+        db.ref('salas/' + minhaSala).update({ turno: novoTurno, resultado: null });
+    });
+    document.getElementById('result-display').classList.add('hidden');
+}
+
+function enviarMensagem() {
+    const msg = document.getElementById('chat-input').value;
+    if (msg) {
+        db.ref('salas/' + minhaSala + '/chat').push({ user: meuUser.name, texto: msg });
+        document.getElementById('chat-input').value = '';
+    }
+}
 
 function showScreen(id) {
-    document.querySelectorAll('.auth-card, .game-container').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-}
-
-function uiRegister() {
-    const name = document.getElementById('reg-user').value;
-    const pass = document.getElementById('reg-pass').value;
-    const conf = document.getElementById('reg-conf').value;
-    
-    if (name && pass === conf) {
-        let db = getDB();
-        if (db[name]) return alert("Utilizador já existe!");
-        db[name] = { pass, balance: 1000 };
-        saveDB(db);
-        alert("Conta criada com 1000₮!");
-        showScreen('screen-login');
-    } else { alert("Dados inválidos!"); }
-}
-
-function uiLoginDuel() {
-    const u1 = document.getElementById('login-u1').value;
-    const p1 = document.getElementById('login-p1').value;
-    const u2 = document.getElementById('login-u2').value;
-    const p2 = document.getElementById('login-p2').value;
-    
-    let db = getDB();
-    
-    if (db[u1] && db[u1].pass === p1 && db[u2] && db[u2].pass === p2) {
-        if (u1 === u2) return alert("Usa contas diferentes para o duelo!");
-        user1 = { name: u1, ...db[u1] };
-        user2 = { name: u2, ...db[u2] };
-        updateUI();
-        showScreen('screen-game');
-    } else { alert("Um ou ambos os logins falharam!"); }
-}
-
-function updateUI() {
-    document.getElementById('p1-name').innerText = user1.name;
-    document.getElementById('p1-balance').innerText = user1.balance;
-    document.getElementById('p2-name').innerText = user2.name;
-    document.getElementById('p2-balance').innerText = user2.balance;
-}
-
-function startDuel() {
-    currentBet = parseInt(document.getElementById('bet-val').value);
-    if (!currentBet || currentBet > user1.balance || currentBet > user2.balance) {
-        return alert("Aposta inválida ou saldo insuficiente!");
-    }
-    
-    document.getElementById('setup-area').classList.add('hidden');
-    turnOwner = Math.random() > 0.5 ? 1 : 2;
-    document.getElementById(`p${turnOwner}-controls`).classList.remove('hidden');
-}
-
-function makeChoice(choice) {
-    document.querySelectorAll('.controls').forEach(c => c.classList.add('hidden'));
-    const num = Math.floor(Math.random() * 16) + 1;
-    const result = (num % 2 === 0 ? 'par' : 'impar');
-    const win = (choice === result);
-    
-    let db = getDB();
-
-    // Se quem escolheu (turnOwner) ganhou a rodada
-    if (win) {
-        if (turnOwner === 1) { user1.balance += currentBet; user2.balance -= currentBet; }
-        else { user2.balance += currentBet; user1.balance -= currentBet; }
-    } else {
-        if (turnOwner === 1) { user1.balance -= currentBet; user2.balance += currentBet; }
-        else { user2.balance -= currentBet; user1.balance += currentBet; }
-    }
-
-    // Salvar no Banco de Dados
-    db[user1.name].balance = user1.balance;
-    db[user2.name].balance = user2.balance;
-    saveDB(db);
-
-    document.getElementById('drawn-num').innerText = num;
-    document.getElementById('result-area').classList.remove('hidden');
-    updateUI();
-}
-
-function resetBoard() {
-    document.getElementById('result-area').classList.add('hidden');
-    document.getElementById('setup-area').classList.remove('hidden');
 }
