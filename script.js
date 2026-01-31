@@ -1,12 +1,13 @@
 // CONFIGURAÇÃO DO FIREBASE (SUBSTITUI PELOS TEUS DADOS)
 const firebaseConfig = {
-  apiKey: "COLA_AQUI",
-  authDomain: "COLA_AQUI",
-  databaseURL: "COLA_AQUI",
-  projectId: "COLA_AQUI",
-  storageBucket: "COLA_AQUI",
-  messagingSenderId: "COLA_AQUI",
-  appId: "COLA_AQUI"
+  apiKey: "AIzaSyAAvZZ3hV07Gn0smESE0FB5LXctPEZ659c",
+  authDomain: "dueloonline-35dd3.firebaseapp.com",
+  databaseURL: "https://dueloonline-35dd3-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "dueloonline-35dd3",
+  storageBucket: "dueloonline-35dd3.firebasestorage.app",
+  messagingSenderId: "634259175209",
+  appId: "1:634259175209:web:80344c12827fa75d832938",
+  measurementId: "G-DMCENPEZ9S"
 };
 
 // Inicializar
@@ -151,3 +152,4 @@ function showScreen(id) {
     document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
     document.getElementById(id).classList.add('active');
 }
+
